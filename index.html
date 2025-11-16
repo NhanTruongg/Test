@@ -3,61 +3,92 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tạo & Tải GIF Ngay</title>
-  <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.min.js"></script>
+  <title>Grok GIF Maker</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; background: #f4f4f4; }
-    canvas { border: 2px solid #333; border-radius: 10px; margin: 20px auto; display: block; }
-    button {
-      padding: 12px 24px;
-      font-size: 18px;
-      margin: 10px;
-      cursor: pointer;
-      background: #e74c3c;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
       color: white;
-      border: none;
-      border-radius: 8px;
+      text-align: center;
+      padding: 40px 20px;
+      min-height: 100vh;
     }
-    button:disabled { background: #ccc; cursor: not-allowed; }
-    .progress { width: 300px; height: 10px; background: #eee; margin: 20px auto; border-radius: 5px; overflow: hidden; }
-    .bar { height: 100%; width: 0%; background: #27ae60; transition: width 0.1s; }
+    h1 { font-size: 2.5rem; margin-bottom: 20px; text-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    canvas {
+      border: 4px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+      max-width: 100%;
+      height: auto;
+    }
+    .controls { margin: 30px 0; }
+    button {
+      padding: 16px 32px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      background: #00d2ff;
+      color: #000;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,210,255,0.4);
+      transition: all 0.3s;
+    }
+    button:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 12px 25px rgba(0,210,255,0.6); }
+    button:disabled { background: #666; cursor: not-allowed; transform: none; }
+    .status {
+      margin: 20px 0;
+      font-size: 1.1rem;
+      min-height: 30px;
+    }
+    .progress {
+      width: 70%; max-width: 500px; height: 12px; background: rgba(255,255,255,0.2);
+      margin: 20px auto; border-radius: 6px; overflow: hidden;
+    }
+    .bar { height: 100%; width: 0%; background: #00d2ff; border-radius: 6px; transition: width 0.2s; }
   </style>
 </head>
 <body>
-  <h1>🎬 Tạo GIF từ Animation & Tải Ngay</h1>
-  <canvas id="canvas" width="400" height="300"></canvas>
-  
-  <div>
-    <button id="start">Bắt đầu tạo GIF</button>
-    <button id="download" disabled>⬇️ Tải GIF về</button>
+  <h1>🚀 Grok GIF Maker</h1>
+  <p>Tạo GIF từ HTML/CSS/JS – Tải về ngay!</p>
+  <canvas id="canvas" width="600" height="400"></canvas>
+
+  <div class="controls">
+    <button id="start">🎬 TẠO GIF NGAY</button>
   </div>
 
   <div class="progress"><div class="bar" id="bar"></div></div>
-  <p id="status">Sẵn sàng...</p>
+  <div class="status" id="status">Sẵn sàng – Nhấn nút để bắt đầu</div>
+
+  <!-- gif.js tải từ cùng repo -->
+  <script src="gif.js"></script>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const startBtn = document.getElementById('start');
-    const downloadBtn = document.getElementById('download');
     const status = document.getElementById('status');
     const bar = document.getElementById('bar');
 
-    let gif = null;
-    let frame = 0;
-    let interval = null;
-    const fps = 24;
-    const totalFrames = 120; // ~5 giây
-    const frameDelay = 1000 / fps;
+    let gif, frame = 0, totalFrames = 144, fps = 24;
+    const delay = 1000 / fps;
 
-    // Khởi tạo GIF
+    startBtn.onclick = () => {
+      frame = 0;
+      bar.style.width = '0%';
+      status.textContent = 'Đang quay animation...';
+      startBtn.disabled = true;
+      initGIF();
+      requestAnimationFrame(drawFrame);
+    };
+
     function initGIF() {
       gif = new GIF({
         workers: 4,
-        quality: 10,
+        quality: 5,
         width: canvas.width,
-        height: canvas.height,
-        workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+        height: canvas.height
       });
 
       gif.on('progress', p => {
@@ -66,78 +97,63 @@
 
       gif.on('finished', blob => {
         const url = URL.createObjectURL(blob);
-        downloadBtn.href = url;
-        downloadBtn.download = `animation-${Date.now()}.gif`;
-        downloadBtn.disabled = false;
-        downloadBtn.textContent = '⬇️ Tải GIF về (' + (blob.size / 1024).toFixed(1) + ' KB)';
-        status.textContent = 'Hoàn tất! Nhấn để tải.';
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `grok-gif-${Date.now()}.gif`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        status.innerHTML = `Hoàn tất! Đã tải tự động.<br>Kích thước: <strong>${(blob.size/1024).toFixed(1)} KB</strong>`;
         startBtn.disabled = false;
       });
     }
 
-    // Vẽ 1 frame
     function drawFrame() {
-      // Nền gradient
+      const t = frame / totalFrames;
+
+      // Nền chuyển màu
       const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-      grad.addColorStop(0, '#ff9a9e');
-      grad.addColorStop(1, '#fad0c4');
+      grad.addColorStop(0, `hsl(${(t * 360 + 200) % 360}, 80%, 60%)`);
+      grad.addColorStop(1, `hsl(${(t * 360 + 260) % 360}, 80%, 60%)`);
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Hình tròn di chuyển
-      const t = frame / totalFrames;
-      const x = t * canvas.width;
-      const y = canvas.height / 2 + Math.sin(t * Math.PI * 4) * 50;
+      // Hình tròn bay
+      const x = 100 + t * (canvas.width - 200);
+      const y = canvas.height / 2 + Math.sin(t * Math.PI * 8) * 100;
 
-      ctx.fillStyle = '#fff';
+      ctx.fillStyle = 'rgba(255,255,255,0.9)';
       ctx.beginPath();
-      ctx.arc(x, y, 40, 0, Math.PI * 2);
+      ctx.arc(x, y, 60, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = '#e74c3c';
-      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 6;
       ctx.stroke();
 
-      // Text
-      ctx.fillStyle = '#333';
-      ctx.font = 'bold 24px Arial';
+      // Logo text
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 48px Arial';
       ctx.textAlign = 'center';
-      ctx.fillText('Grok GIF Maker', canvas.width / 2, 50);
+      ctx.fillText('Grok', canvas.width / 2, 100);
 
-      // Thêm frame vào GIF
-      gif.addFrame(ctx, { copy: true, delay: frameDelay });
+      // Thêm frame
+      gif.addFrame(ctx, { copy: true, delay });
 
       // Cập nhật tiến trình
-      bar.style.width = ((frame / totalFrames) * 100) + '%';
-      status.textContent = `Đang tạo... Frame ${frame}/${totalFrames}`;
+      const progress = frame / totalFrames;
+      bar.style.width = (progress * 100) + '%';
+      status.textContent = `Đang tạo... ${frame}/${totalFrames} frames`;
 
       frame++;
-
-      if (frame > totalFrames) {
-        clearInterval(interval);
+      if (frame <= totalFrames) {
+        setTimeout(() => requestAnimationFrame(drawFrame), delay);
+      } else {
         status.textContent = 'Đang render GIF...';
-        startBtn.disabled = true;
         gif.render();
       }
     }
-
-    // Bắt đầu
-    startBtn.onclick = () => {
-      frame = 0;
-      initGIF();
-      startBtn.disabled = true;
-      downloadBtn.disabled = true;
-      downloadBtn.textContent = '⬇️ Tải GIF về';
-      status.textContent = 'Đang quay...';
-      bar.style.width = '0%';
-      interval = setInterval(drawFrame, frameDelay);
-      drawFrame(); // frame đầu tiên
-    };
-
-    // Tải về (nút sẽ tự enable khi xong)
-    downloadBtn.onclick = () => {
-      // Tự động click link ẩn
-      downloadBtn.click();
-    };
   </script>
 </body>
 </html>
