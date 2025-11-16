@@ -5,16 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Thiệp 20/11 - Tải GIF</title>
 <style>
-body {
-  display:flex; flex-direction:column; align-items:center; justify-content:center;
-  min-height:100vh; font-family:'Times New Roman', serif; gap:15px;
-  background-image:url('images/hoalahe.jpg'); background-size:cover; background-position:center;
-}
+body { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; font-family:'Times New Roman', serif; gap:15px; background:#f0f0f0; }
 .input-group { display:flex; flex-direction:column; gap:8px; width:350px; }
 .input-group label { font-weight:bold; color:#cc3333; font-size:1.1em; }
 .input-group input { padding:12px 16px; font-size:1em; border:2px solid #d89648; border-radius:12px; outline:none; }
 .create-button { padding:14px 32px; background:#cc3333; color:white; border:none; border-radius:30px; font-size:1.2em; font-weight:bold; cursor:pointer; }
 .create-button:hover { background:#b02a2a; }
+#cardContainer { width:350px; height:250px; position:relative; }
+.card { width:350px; height:180px; background:white; border-radius:12px; padding:20px; box-shadow:0 10px 20px rgba(0,0,0,0.2); text-align:center; position:absolute; top:35px; left:0; }
+.envelope { width:350px; height:250px; background:#f7b267; border-radius:12px; position:absolute; top:0; left:0; }
 </style>
 </head>
 <body>
@@ -26,19 +25,43 @@ body {
 
 <button id="createBtn" class="create-button">Tạo Thiệp 20/11</button>
 
+<div id="cardContainer"></div>
+
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gif.js.optimized/dist/gif.js"></script>
+
 <script>
-document.getElementById('createBtn').onclick = () => {
+document.getElementById('createBtn').onclick = async () => {
     const teacherName = document.getElementById('teacherName').value.trim() || "Thầy_Cô";
-    // URL GIF sẵn có (đặt sẵn trên server)
-    const gifUrl = `images/gif-thiep.gif`;
-    
-    // Tạo thẻ <a> tạm để download ngay
-    const a = document.createElement('a');
-    a.href = gifUrl;
-    a.download = `Thiep-2011-${teacherName}.gif`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const container = document.getElementById('cardContainer');
+    container.innerHTML = `
+        <div class="envelope"></div>
+        <div class="card">
+            <h2>Kính Chúc Mừng 20/11</h2>
+            <p>${teacherName}, chúc Thầy/Cô một ngày vui vẻ!</p>
+        </div>
+    `;
+    const envelope = container.querySelector('.envelope');
+    const card = container.querySelector('.card');
+
+    const gif = new GIF({ workers: 2, quality: 10 });
+
+    // Lật phong bì frame 1: phong bì đóng
+    gif.addFrame(await html2canvas(container, { scale: 2 }), { delay: 500 });
+
+    // Lật phong bì frame 2: phong bì biến mất, thiệp hiện
+    envelope.style.transform = 'translateY(300px) scale(0.5)';
+    card.style.transform = 'translateY(-50px) scale(1.1)';
+    gif.addFrame(await html2canvas(container, { scale: 2 }), { delay: 1000 });
+
+    gif.on('finished', function(blob) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Thiep-2011-${teacherName}.gif`;
+        a.click();
+    });
+
+    gif.render();
 };
 </script>
 
