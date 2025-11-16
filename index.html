@@ -1,1 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thiệp 20/11 - Tạo GIF</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="container">
+        <div id="envelope-closed" class="frame-content">
+            <div class="envelope-top"></div>
+            <div class="envelope-body"></div>
+            <div class="envelope-flap-closed"></div>
+            <div class="stamp"></div>
+            <div class="address">
+                <p>Gửi những người lái đò thầm lặng</p>
+                <p>Happy Vietnamese Teachers' Day!</p>
+            </div>
+        </div>
+
+        <div id="envelope-open" class="frame-content hidden">
+            <div class="envelope-top open"></div>
+            <div class="envelope-body"></div>
+            <div class="card">
+                <h2>Chúc mừng 20/11</h2>
+                <p>Kính chúc các thầy cô giáo sức khỏe, hạnh phúc và luôn thành công trong sự nghiệp trồng người!</p>
+                <p>Trân trọng!</p>
+            </div>
+            <div class="envelope-flap-open"></div>
+        </div>
+    </div>
+
+    <button id="createGifBtn">Tạo GIF Thiệp 20/11</button>
+    <div id="gifContainer"></div>
+
+    <script src="html2canvas.min.js"></script>
+    <script src="gif.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
 
