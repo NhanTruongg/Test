@@ -1,0 +1,170 @@
+body {
+    font-family: Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f0f0;
+    margin: 0;
+    overflow: hidden; /* Ẩn các phần thừa khi chụp */
+}
+
+#container {
+    position: relative;
+    width: 400px;
+    height: 300px;
+    margin-bottom: 20px;
+    background-color: transparent; /* Quan trọng để chỉ chụp nội dung phong bì/thiệp */
+    border: 1px solid #ccc; /* Chỉ để dễ hình dung vùng chứa */
+}
+
+.frame-content {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    background-color: #fff; /* Nền cho frame */
+    display: flex; /* Dùng flex để căn chỉnh nội dung */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* --- Phong bì --- */
+.envelope-body {
+    width: 100%;
+    height: 100%;
+    background-color: #f7e1b3; /* Màu phong bì */
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    border-radius: 5px;
+}
+
+.envelope-top, .envelope-flap-closed, .envelope-flap-open {
+    position: absolute;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    z-index: 2;
+}
+
+/* Nắp phong bì đóng */
+.envelope-flap-closed {
+    border-width: 0 200px 100px 200px;
+    border-color: transparent transparent #d7c193 transparent; /* Màu nắp */
+    top: 0;
+    left: 0;
+}
+
+/* Nắp phong bì mở (ở phía dưới) */
+.envelope-flap-open {
+    border-width: 100px 200px 0 200px;
+    border-color: #d7c193 transparent transparent transparent; /* Màu nắp */
+    bottom: 0; /* Đặt ở dưới khi mở */
+    left: 0;
+    z-index: 0; /* Nằm dưới thiệp */
+}
+
+/* Phần trên của phong bì (khi mở) */
+.envelope-top.open {
+    border-width: 0 200px 150px 200px;
+    border-color: transparent transparent #f7e1b3 transparent;
+    top: -50px; /* Di chuyển lên trên */
+    left: 0;
+    z-index: 3;
+    transform: rotateX(180deg); /* Lật ngược để tạo cảm giác mở */
+    transform-origin: bottom center;
+}
+
+
+.stamp {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    background-color: #e74c3c;
+    border-radius: 3px;
+    z-index: 3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 10px;
+}
+
+.address {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    font-size: 14px;
+    color: #333;
+    z-index: 3;
+    line-height: 1.5;
+}
+
+/* --- Thiệp bên trong --- */
+.card {
+    position: absolute;
+    width: 90%;
+    height: 80%;
+    background-color: #ffe0b3; /* Màu thiệp */
+    border: 1px dashed #d7c193;
+    border-radius: 5px;
+    z-index: 2; /* Nằm trên thân phong bì */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 15px;
+    box-sizing: border-box;
+    font-size: 16px;
+    color: #555;
+    line-height: 1.6;
+}
+.card h2 {
+    color: #c0392b;
+    margin-bottom: 10px;
+}
+.card p {
+    margin-bottom: 8px;
+}
+
+
+button {
+    padding: 12px 25px;
+    font-size: 16px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+#gifContainer img {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
