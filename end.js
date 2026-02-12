@@ -1,5 +1,5 @@
 const mineflayer = require('mineflayer');
-const inventoryViewer = require('mineflayer-web-inventory')
+
 function createBot() {
     console.log('🔄 Đang khởi động bot... (không dùng proxy)');
 
@@ -11,7 +11,7 @@ function createBot() {
         skipValidation: true,       // giữ nguyên để hỗ trợ offline/cracked nếu cần
         connectTimeout: 30000
     });
-    inventoryViewer(bot)
+    
     let isLoggedIn = false;
     let hasWarped = false;
 
