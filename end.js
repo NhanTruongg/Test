@@ -1,5 +1,4 @@
 const mineflayer = require('mineflayer');
-
 function createBot() {
     console.log('🔄 Đang khởi động bot... (không dùng proxy)');
 
