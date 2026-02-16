@@ -6,7 +6,7 @@ function createBot() {
     const bot = mineflayer.createBot({
         host: 'kingmc.vn',
         port: 25565,
-        username: 'nhanvn3',
+        username: '',
         version: '1.20.4',
         skipValidation: true,
         connectTimeout: 30000
@@ -34,8 +34,8 @@ function createBot() {
         // Đăng nhập
         setTimeout(() => {
             if (!isLoggedIn) {
-                bot.chat('/dn 21042010');
-                console.log('🔑 Đã gửi /dn 21042010');
+                bot.chat('/dn ');
+                console.log('🔑 Đã gửi /dn');
             }
         }, 1500);
 
