@@ -7,7 +7,7 @@ function createBot() {
         host: 'kingmc.vn',
         port: 25565,
         username: 'nhanvn5',
-        version: '1.20.4',
+        version: '1.18.2',
         // --- CẤU HÌNH CHỐNG SOCKET CLOSED ---
         checkTimeoutInterval: 45000, 
         keepAlive: true,
