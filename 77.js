@@ -1,53 +1,48 @@
 const mineflayer = require('mineflayer');
-const inventoryViewer = require('mineflayer-web-inventory');
 
 function createBot() {
-    console.log('🔄 Đang khởi động bot...');
+    console.log('🔄 Đang kết nối đến server...');
 
     const bot = mineflayer.createBot({
         host: 'kingmc.vn',
         port: 25565,
-        username: 'calinguyen9239',
+        username: 'nhanvn5',
         version: '1.20.4',
-        skipValidation: true,
+        // --- CẤU HÌNH CHỐNG SOCKET CLOSED ---
+        checkTimeoutInterval: 45000, 
+        keepAlive: true,
+        hideErrors: true,
         connectTimeout: 30000
     });
 
-    inventoryViewer(bot);
-
     let isLoggedIn = false;
-    let step = 0; // 0: Idle, 1: Chờ menu Warp, 2: Chờ menu AFK
-    let menuWatcher = null; // Bộ hẹn giờ theo dõi menu
+    let step = 0; // 1: Chờ menu Warp, 2: Chờ menu AFK
+    let retryInterval = null;
 
-    function resetStates() {
-        isLoggedIn = false;
-        step = 0;
-        clearMenuWatcher();
-    }
-
-    function clearMenuWatcher() {
-        if (menuWatcher) {
-            clearTimeout(menuWatcher);
-            menuWatcher = null;
+    // Hàm dọn dẹp vòng lặp click
+    const clearRetry = () => {
+        if (retryInterval) {
+            clearInterval(retryInterval);
+            retryInterval = null;
         }
-    }
+    };
 
-    function startMenuWatcher(reason) {
-        clearMenuWatcher();
-        menuWatcher = setTimeout(() => {
-            console.log(`⚠️ Quá 15s không thấy menu (${reason}) -> Reconnect...`);
-            bot.end('menu_timeout');
-        }, 15000);
-    }
+    // Hàm gửi chat an toàn (tránh crash khi socket đã đóng)
+    const safeChat = (msg) => {
+        if (bot && bot.entity && bot.player) {
+            bot.chat(msg);
+        }
+    };
 
     bot.once('spawn', () => {
-        console.log('✅ Bot đã spawn thành công!');
-        resetStates();
-
+        console.log('✅ Bot đã vào server!');
+        clearRetry();
+        
+        // Đăng nhập sau 2s
         setTimeout(() => {
-            bot.chat('/dn 21042010');
-            console.log('🔑 Đã gửi lệnh /dn');
-        }, 1500);
+            safeChat('/dn 21042010');
+            console.log('🔑 Đã gửi lệnh login');
+        }, 2000);
     });
 
     bot.on('messagestr', (msg) => {
@@ -57,61 +52,87 @@ function createBot() {
                 isLoggedIn = true;
                 console.log('🎉 Đăng nhập thành công!');
                 
+                // Sau 3s bắt đầu quy trình mở menu
                 setTimeout(() => {
+                    step = 1;
                     bot.setQuickBarSlot(4);
-                    bot.activateItem();
-                    step = 1; 
-                    console.log('📦 Đang mở Menu chính...');
-                    startMenuWatcher('Mở Menu Warp'); // Bắt đầu đếm 15s
-                }, 2000);
+                    bot.activateItem(); 
+                    console.log('📦 Đang mở Menu Warp...');
+                    
+                    // Cơ chế click nhắc lại mỗi 3s nếu menu vẫn mở
+                    clearRetry();
+                    retryInterval = setInterval(() => {
+                        if (bot.currentWindow) {
+                            if (step === 1) {
+                                console.log('🖱️ Click nhắc lại Slot 24...');
+                                bot.clickWindow(24, 0, 0);
+                            } else if (step === 2) {
+                                console.log('🖱️ Click nhắc lại Slot 4...');
+                                bot.clickWindow(4, 0, 0);
+                            }
+                        } else {
+                            // Nếu menu chưa mở, thử bấm Slot 4/gõ lệnh lại
+                            if (step === 1) bot.activateItem();
+                            if (step === 2) safeChat('/afk');
+                        }
+                    }, 3500);
+                }, 3000);
             }
         }
     });
 
     bot.on('windowOpen', (window) => {
-        // Hủy bỏ đếm ngược 15s vì menu đã mở thành công
-        clearMenuWatcher();
-        console.log(`📦 Menu mở (Số ô: ${window.slots.length})`);
-
+        console.log(`📦 Menu mở (Slots: ${window.slots.length})`);
+        // Đợi 1s cho item kịp load rồi click ngay phát đầu
         setTimeout(() => {
-            if (step === 1) {
-                console.log('🖱️ Click Slot 24 (Warp)...');
-                bot.clickWindow(24, 0, 0);
-                step = 0; 
-
-                setTimeout(() => {
-                    console.log('💬 Gửi lệnh /afk');
-                    bot.chat('/afk');
-                    step = 2; 
-                    startMenuWatcher('Mở Menu AFK'); // Bắt đầu đếm 15s cho menu tiếp theo
-                }, 3000);
-            } 
-            else if (step === 2) {
-                console.log('🖱️ Click Slot 4 (Khu AFK)...');
-                bot.clickWindow(4, 0, 0);
-                step = 3; 
-                console.log('✅ Đã vào khu AFK thành công!');
-                clearMenuWatcher(); // Đã xong toàn bộ quy trình
-            }
-        }, 1200);
+            if (step === 1) bot.clickWindow(24, 0, 0);
+            if (step === 2) bot.clickWindow(4, 0, 0);
+        }, 1000);
     });
 
-    // Chống treo máy
-    setInterval(() => {
-        if (isLoggedIn) {
-            bot.setControlState('jump', true);
-            setTimeout(() => bot.setControlState('jump', false), 150);
+    bot.on('windowClose', () => {
+        if (step === 1) {
+            console.log('✅ Đã click Warp, chuẩn bị gõ /afk...');
+            step = 0; // Tạm nghỉ
+            setTimeout(() => {
+                step = 2;
+                safeChat('/afk');
+                console.log('💬 Đã gửi /afk');
+            }, 3000);
+        } else if (step === 2) {
+            console.log('🚀 Đã vào khu AFK thành công!');
+            step = 3;
+            clearRetry(); // Hoàn tất quy trình thì ngừng click nhắc lại
         }
-    }, 10000);
+    });
+
+    // --- XỬ LÝ LỖI VÀ RECONNECT ---
+    bot.on('error', (err) => {
+        console.log(`⚠️ Lỗi Socket: ${err.code || err.message}`);
+    });
 
     bot.on('end', (reason) => {
-        console.log(`❌ Mất kết nối [${reason}] -> Reconnect sau 8s...`);
-        resetStates();
-        setTimeout(createBot, 8000);
+        console.log(`🔌 Kết nối bị ngắt (${reason}). Reconnect sau 10s...`);
+        clearRetry();
+        isLoggedIn = false;
+        step = 0;
+        // Xóa hết listener để tránh tràn bộ nhớ
+        bot.removeAllListeners();
+        setTimeout(createBot, 10000);
     });
 
-    bot.on('error', (err) => console.log('⚠️ Lỗi:', err.message));
+    // Anti-AFK Nhảy (mỗi 15s)
+    setInterval(() => {
+        if (isLoggedIn && bot.entity) {
+            bot.setControlState('jump', true);
+            setTimeout(() => bot.setControlState('jump', false), 200);
+        }
+    }, 15000);
 }
 
-createBot();
-
+// Chạy bot
+try {
+    createBot();
+} catch (e) {
+    console.error('Lỗi khởi động:', e);
+}
