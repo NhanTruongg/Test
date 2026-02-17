@@ -7,8 +7,11 @@ function createBot() {
         host: 'kingmc.vn',
         port: 25565,
         username: 'nhanvn5',
-        version: '1.20.4',
+        version: '1.18.2',
         skipValidation: true,
+        checkTimeoutInterval: 45000, 
+        keepAlive: true,
+        hideErrors: true,
         connectTimeout: 30000
     });
 
