@@ -1,136 +1,114 @@
 const mineflayer = require('mineflayer');
 
 function createBot() {
-    console.log('🔄 Đang khởi động bot... (không dùng proxy)');
+    console.log('🔄 Đang khởi động bot...');
 
     const bot = mineflayer.createBot({
         host: 'kingmc.vn',
         port: 25565,
-        username: '',
+        username: 'nhanvn5',
         version: '1.20.4',
         skipValidation: true,
         connectTimeout: 30000
     });
-    
-    let isLoggedIn = false;
-    let hasWarped = false;
-    let menuTimeout = null;           // timer kiểm tra kẹt menu
-    const MENU_TIMEOUT_MS = 22000;    // 22 giây (cho dư một chút)
 
-    // Reset trạng thái khi reconnect
+
+    let isLoggedIn = false;
+    let step = 0; // 0: Idle, 1: Chờ menu Warp, 2: Chờ menu AFK
+    let menuWatcher = null; // Bộ hẹn giờ theo dõi menu
+
     function resetStates() {
         isLoggedIn = false;
-        hasWarped = false;
-        if (menuTimeout) {
-            clearTimeout(menuTimeout);
-            menuTimeout = null;
+        step = 0;
+        clearMenuWatcher();
+    }
+
+    function clearMenuWatcher() {
+        if (menuWatcher) {
+            clearTimeout(menuWatcher);
+            menuWatcher = null;
         }
     }
 
+    function startMenuWatcher(reason) {
+        clearMenuWatcher();
+        menuWatcher = setTimeout(() => {
+            console.log(`⚠️ Quá 15s không thấy menu (${reason}) -> Reconnect...`);
+            bot.end('menu_timeout');
+        }, 15000);
+    }
+
     bot.once('spawn', () => {
-        console.log('✅ Bot đã spawn');
+        console.log('✅ Bot đã spawn thành công!');
         resetStates();
 
-        // Đăng nhập
         setTimeout(() => {
-            if (!isLoggedIn) {
-                bot.chat('/dn ');
-                console.log('🔑 Đã gửi /dn');
-            }
+            bot.chat('/dn 21042010');
+            console.log('🔑 Đã gửi lệnh /dn');
         }, 1500);
+    });
 
-        // Thử mở menu
-        setTimeout(() => {
-            if (!hasWarped) {
-                bot.setQuickBarSlot(4);
-                bot.activateItem();
-                console.log('📦 Đã thử mở menu (slot 4)');
-
-                // Bắt đầu đếm thời gian chờ windowOpen
-                menuTimeout = setTimeout(() => {
-                    if (!hasWarped) {
-                        console.log('⚠️ Kẹt mở menu quá 22 giây → tự disconnect để reconnect');
-                        bot.end('menu timeout');  // lý do tùy ý, chỉ để log
-                    }
-                }, MENU_TIMEOUT_MS);
+    bot.on('messagestr', (msg) => {
+        const lowerMsg = msg.toLowerCase();
+        if (lowerMsg.includes('thành công') || lowerMsg.includes('welcome') || lowerMsg.includes('chào mừng')) {
+            if (!isLoggedIn) {
+                isLoggedIn = true;
+                console.log('🎉 Đăng nhập thành công!');
+                
+                setTimeout(() => {
+                    bot.setQuickBarSlot(4);
+                    bot.activateItem();
+                    step = 1; 
+                    console.log('📦 Đang mở Menu chính...');
+                    startMenuWatcher('Mở Menu Warp'); // Bắt đầu đếm 15s
+                }, 2000);
             }
-        }, 4000);
-    });
-
-    // Khi menu thực sự mở → hủy timer timeout
-    bot.on('windowOpen', (window) => {
-        console.log(`📦 Window mở: "${window.title}" (slots: ${window.slots.length})`);
-
-        // Hủy timer nếu đang chạy
-        if (menuTimeout) {
-            clearTimeout(menuTimeout);
-            menuTimeout = null;
         }
-
-        if (hasWarped) return;
-
-        setTimeout(() => {
-            const slot = 24;
-            const item = window.slots[slot];
-            console.log(`🖱️ Slot ${slot} → ${item?.name || 'không có item'} (type: ${item?.type || '?'})`);
-
-            bot.clickWindow(slot, 0, 0);
-            console.log(`✅ Đã click slot ${slot}`);
-        }, 800);
     });
 
-    // Khi window đóng → warp
-    bot.on('windowClose', () => {
-        console.log(`🗑️ Window đã đóng`);
+    bot.on('windowOpen', (window) => {
+        // Hủy bỏ đếm ngược 15s vì menu đã mở thành công
+        clearMenuWatcher();
+        console.log(`📦 Menu mở (Số ô: ${window.slots.length})`);
 
         setTimeout(() => {
-            if (!hasWarped && isLoggedIn) {
-                bot.chat('/warp afk1');
-                console.log('🚀 Đã gửi /warp afk1');
-                hasWarped = true;
+            if (step === 1) {
+                console.log('🖱️ Click Slot 24 (Warp)...');
+                bot.clickWindow(24, 0, 0);
+                step = 0; 
+
+                setTimeout(() => {
+                    console.log('💬 Gửi lệnh /afk');
+                    bot.chat('/afk');
+                    step = 2; 
+                    startMenuWatcher('Mở Menu AFK'); // Bắt đầu đếm 15s cho menu tiếp theo
+                }, 3000);
+            } 
+            else if (step === 2) {
+                console.log('🖱️ Click Slot 4 (Khu AFK)...');
+                bot.clickWindow(4, 0, 0);
+                step = 3; 
+                console.log('✅ Đã vào khu AFK thành công!');
+                clearMenuWatcher(); // Đã xong toàn bộ quy trình
             }
         }, 1200);
     });
 
-    // Phát hiện đăng nhập thành công
-    bot.on('message', (jsonMsg) => {
-        const msg = jsonMsg.toString().toLowerCase();
-        if (msg.includes('đăng nhập thành công') || 
-            msg.includes('chào mừng') || 
-            msg.includes('welcome')) {
-            if (!isLoggedIn) {
-                console.log('🎉 Đăng nhập thành công!');
-                isLoggedIn = true;
-            }
-        }
-    });
-
-    // Auto jump chống AFK
+    // Chống treo máy
     setInterval(() => {
-        if (bot.entity?.position && isLoggedIn) {
+        if (isLoggedIn) {
             bot.setControlState('jump', true);
-            setTimeout(() => bot.setControlState('jump', false), 180);
+            setTimeout(() => bot.setControlState('jump', false), 150);
         }
-    }, 5000);
+    }, 10000);
 
-    // ─── Xử lý ngắt kết nối ────────────────────────────────
     bot.on('end', (reason) => {
-        console.log(`❌ Bot ngắt kết nối (lý do: ${reason || 'không rõ'}) → reconnect sau 8s...`);
+        console.log(`❌ Mất kết nối [${reason}] -> Reconnect sau 8s...`);
         resetStates();
         setTimeout(createBot, 8000);
     });
 
-    bot.on('error', (err) => {
-        console.log('⚠️ Lỗi:', err.message || err);
-        // Không reconnect ngay ở đây → để 'end' xử lý
-    });
-
-    bot.on('kicked', (reasonObj) => {
-        const reason = JSON.stringify(reasonObj);
-        console.log(`👢 Bị kick: ${reason}`);
-        // 'end' sẽ được gọi sau kicked → reconnect tự động
-    });
+    bot.on('error', (err) => console.log('⚠️ Lỗi:', err.message));
 }
 
-// Khởi động lần đầu
 createBot();
