@@ -98,13 +98,7 @@ function createBot() {
     });
 
     // Chống treo máy
-    setInterval(() => {
-        if (isLoggedIn) {
-            bot.setControlState('jump', true);
-            setTimeout(() => bot.setControlState('jump', false), 150);
-        }
-    }, 10000);
-
+    
     bot.on('end', (reason) => {
         console.log(`❌ Mất kết nối [${reason}] -> Reconnect sau 8s...`);
         resetStates();
